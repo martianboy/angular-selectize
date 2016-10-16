@@ -3,7 +3,14 @@
  * https://github.com/machineboy2045/angular-selectize
  **/
 
-angular.module('selectize', []).value('selectizeConfig', {}).directive("selectize", ['selectizeConfig', function(selectizeConfig) {
+var angular = require('angular');
+var Selectize = require('selectize');
+
+module.exports = angular.module('selectize', [])
+
+.value('selectizeConfig', {})
+
+.directive("selectize", ['selectizeConfig', function(selectizeConfig) {
   return {
     restrict: 'EA',
     require: '^ngModel',
@@ -104,4 +111,6 @@ angular.module('selectize', []).value('selectizeConfig', {}).directive("selectiz
       });
     }
   };
-}]);
+}])
+
+.name;
