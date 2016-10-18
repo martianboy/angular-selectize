@@ -16,7 +16,7 @@ module.exports = angular.module('selectize', [])
     require: '^ngModel',
     scope: { ngModel: '=', config: '=?', options: '=?', ngDisabled: '=', ngRequired: '&' },
     link: function(scope, element, attrs, modelCtrl) {
-
+      var watchers = {};
       var selectize,
           settings = angular.extend({}, Selectize.defaults, selectizeConfig, scope.config);
 
@@ -63,45 +63,59 @@ module.exports = angular.module('selectize', [])
         }
       }
 
-      settings.onChange = function(value) {
-        var value = angular.copy(selectize.items);
-        if (settings.maxItems == 1) {
-          value = value[0]
-        }
-        modelCtrl.$setViewValue( value );
+      var initSelectize = function() {
+        settings = angular.extend({}, Selectize.defaults, selectizeConfig, scope.config, {
+          onChange: function(value) {
+            var value = angular.copy(selectize.items);
+            if (settings.maxItems == 1) {
+              value = value[0]
+            }
+            modelCtrl.$setViewValue( value );
 
-        if (scope.config.onChange) {
-          scope.config.onChange.apply(this, arguments);
-        }
-      };
+            if (scope.config.onChange) {
+              scope.config.onChange.apply(this, arguments);
+            }
+          },
 
-      settings.onOptionAdd = function(value, data) {
-        if( scope.options.indexOf(data) === -1 ) {
-          scope.options.push(data);
+          onOptionAdd: function(value, data) {
+            if( scope.options.indexOf(data) === -1 ) {
+              scope.options.push(data);
 
-          if (scope.config.onOptionAdd) {
-            scope.config.onOptionAdd.apply(this, arguments);
+              if (scope.config.onOptionAdd) {
+                scope.config.onOptionAdd.apply(this, arguments);
+              }
+            }
+          },
+          onInitialize: function() {
+            selectize = element[0].selectize;
+
+            setSelectizeOptions(scope.options);
+
+            //provides a way to access the selectize element from an
+            //angular controller
+            if (scope.config.onInitialize) {
+              scope.config.onInitialize(selectize);
+            }
+
+            // Clear watchers
+            for (var k in watchers) {
+              if (watchers[k])
+                watchers[k]();
+            }
+
+            watchers.options = scope.$watchCollection('options', setSelectizeOptions);
+            wathcers.ngModel = scope.$watch('ngModel', setSelectizeValue);
+            watchers.ngDisabled = scope.$watch('ngDisabled', toggle);
           }
-        }
-      };
+        });
 
-      settings.onInitialize = function() {
-        selectize = element[0].selectize;
+        if (selectize)
+          selectize.destroy();
 
-        setSelectizeOptions(scope.options);
+        element.selectize(settings);
+      }
 
-        //provides a way to access the selectize element from an
-        //angular controller
-        if (scope.config.onInitialize) {
-          scope.config.onInitialize(selectize);
-        }
-
-        scope.$watchCollection('options', setSelectizeOptions);
-        scope.$watch('ngModel', setSelectizeValue);
-        scope.$watch('ngDisabled', toggle);
-      };
-
-      element.selectize(settings);
+      scope.$watch('config', initSelectize);
 
       element.on('$destroy', function() {
         if (selectize) {
