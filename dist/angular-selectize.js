@@ -1,6 +1,6 @@
 /**
  * Angular Selectize2
- * https://github.com/machineboy2045/angular-selectize
+ * https://github.com/martianboy/angular-selectize
  **/
 
 var angular = require('angular');
@@ -20,7 +20,6 @@ module.exports = angular.module('selectize', [])
       var selectize,
           settings = angular.extend({}, Selectize.defaults, selectizeConfig, scope.config);
 
-      scope.options = scope.options || [];
       scope.config = scope.config || {};
 
       var isEmpty = function(val) {
@@ -64,6 +63,9 @@ module.exports = angular.module('selectize', [])
       }
 
       var initSelectize = function() {
+        if (!scope.config || Object.keys(scope.config).length === 0) return;
+
+        scope.options = scope.options || [];
         settings = angular.extend({}, Selectize.defaults, selectizeConfig, scope.config, {
           onChange: function(value) {
             var value = angular.copy(selectize.items);
@@ -98,13 +100,15 @@ module.exports = angular.module('selectize', [])
             }
 
             // Clear watchers
-            for (var k in watchers) {
-              if (watchers[k])
-                watchers[k]();
-            }
+            if (watchers.options)
+              watchers.options();
+            if (watchers.ngModel)
+              watchers.ngModel();
+            if (watchers.ngDisabled)
+              watchers.ngDisabled();
 
             watchers.options = scope.$watchCollection('options', setSelectizeOptions);
-            wathcers.ngModel = scope.$watch('ngModel', setSelectizeValue);
+            watchers.ngModel = scope.$watch('ngModel', setSelectizeValue);
             watchers.ngDisabled = scope.$watch('ngDisabled', toggle);
           }
         });
@@ -116,6 +120,7 @@ module.exports = angular.module('selectize', [])
       }
 
       scope.$watch('config', initSelectize);
+      // initSelectize();
 
       element.on('$destroy', function() {
         if (selectize) {
